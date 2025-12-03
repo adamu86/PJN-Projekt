@@ -20,7 +20,7 @@ dodatkowymi opłatami, takimi jak akcyza.
 Odpowiedź: 160zł
 
 NER (Named Entity Recognition) do kwot, dat, miejsc, osób.
-Sprawdzenie czy odpowiedzią może być:
+Sprawdzenie czy odpowiedzią może być: <br />
 ● liczba np. ["wynosi","opłata","koszt","kwota","liczba","wysokość"] <br />
 ● data/czas ["termin","do","od","kiedy","deadline","data"], <br />
 ● miejsce ["miejsce","w","na","adres","lokalizacja"] <br />
