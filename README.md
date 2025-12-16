@@ -28,3 +28,10 @@ Sprawdzenie czy odpowiedzią może być: <br />
 
 Ewaluacja na ręcznie przygotowanym zbiorze Q&A (100+):
 Miary: Mean Reciprocal Rank@k, Recall@k dla wyszukiwania pasusów.
+
+Przegląd metod i technologii do sprawdzenia/zastosowania:
+Python - główny język implementacji systemu, integracja bibliotek NLP i wyszukiwania, łatwa budowa
+backendu
+spaCy - tokenizacja, lematyzacja, rozpoznawanie części mowy, POS tagging
+rank-bm25 - BM25, wypisywanie rankingów pasusów na podstawie podobieństwa tekstu
+Metryki: MRR@k, Recall@k - ocena skuteczności wyszukiwania pasusów
