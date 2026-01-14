@@ -1,6 +1,7 @@
 import re
 from importlib.resources import path
 from bm25_engine import BM25Engine
+from answer_extractor import answer_extraction
 
 with open("data/regulamin.txt", encoding="utf-8") as f:
     text = f.read()
@@ -22,6 +23,10 @@ while(1):
     q = input("\nZadaj pytanie > ")
 
     results = engine.query(q)
+    # answers = answer_extraction(results, q)
+    # print("\nZnalezione NER: ")
+    # for ner in answers:
+    #     print(f"{ner.text} ({ner.label_})")
     print("\nRanking:")
     for p, score in results:
         print(f"[{score:.2f}] {p}")

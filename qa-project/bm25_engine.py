@@ -7,7 +7,7 @@ class BM25Engine:
         tokenized = [preprocess(p) for p in passages]
         self.bm25 = BM25Okapi(tokenized)
 
-    def query(self, question, k=3):
+    def query(self, question, k=10):
         q_tokens = preprocess(question)
         scores = self.bm25.get_scores(q_tokens)
         ranked = sorted(
