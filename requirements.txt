@@ -1,0 +1,6 @@
+pandas
+numpy
+spacy
+rank_bm25
+
+# python -m spacy download pl_core_news_sm
