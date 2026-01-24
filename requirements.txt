@@ -1,6 +1,6 @@
-pandas
-numpy
 spacy
 rank_bm25
+fastapi 
+uvicorn
 
 # python -m spacy download pl_core_news_sm

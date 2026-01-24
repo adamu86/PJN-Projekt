@@ -2,6 +2,8 @@ import re
 from importlib.resources import path
 from bm25_engine import BM25Engine
 from answer_extractor import answer_extraction
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 with open("data/regulamin.txt", encoding="utf-8") as f:
     text = f.read()
@@ -19,15 +21,32 @@ for para in paragraphs:
 
 engine = BM25Engine(passages)
 
-while(1):
-    q = input("\nZadaj pytanie > ")
 
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/ask")
+def ask_question(q: str):
     results = engine.query(q)
-    # answers = answer_extraction(results, q)
-    # print("\nZnalezione NER: ")
-    # for ner in answers:
-    #     print(f"{ner.text} ({ner.label_})")
-    print("\nRanking:")
-    for p, score in results:
-        print(f"[{score:.2f}] {p}")
-    print("\n")
+    
+    return results
+
+# while(1):
+#     q = input("\nZadaj pytanie > ")
+
+#     results = engine.query(q)
+#     # answers = answer_extraction(results, q)
+#     # print("\nZnalezione NER: ")
+#     # for ner in answers:
+#     #     print(f"{ner.text} ({ner.label_})")
+#     print("\nRanking:")
+#     for p, score in results:
+#         print(f"[{score:.2f}] {p}")
+#     print("\n")
+
