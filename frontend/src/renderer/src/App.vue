@@ -14,9 +14,12 @@ import AccordionHeader from 'primevue/accordionheader';
 import AccordionContent from 'primevue/accordioncontent';
 import ScrollPanel from 'primevue/scrollpanel';
 import Toolbar from 'primevue/toolbar';
+import Toast from 'primevue/toast';
+import { useToast } from 'primevue/usetoast';
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
 
+const toast = useToast();
 
 const question = ref<string>('');
 const answer = ref<string>('');
@@ -43,6 +46,10 @@ const getAnswer = async () => {
     history.value.unshift({ question: question.value, answer: answer.value });
 
     save();
+
+    showSuccess();
+  } else {
+    showError();
   }
 }
 
@@ -60,6 +67,14 @@ const minimizeApp = () => {
   window.electron.ipcRenderer.send('minimize')
 }
 
+const showSuccess = () => {
+    toast.add({ severity: 'success', summary: 'Sukces', life: 1500 });
+};
+
+const showError = () => {
+    toast.add({ severity: 'error', summary: 'Wpisz pytanie', life: 1500 });
+};
+
 onMounted(async () => {
   const res = await window.electron.ipcRenderer.invoke('load');
 
@@ -68,12 +83,11 @@ onMounted(async () => {
 </script>
 
 <template>
+  <Toast position="top-center" class="w-54! **:my-auto!"></Toast>
   <Toolbar class="titlebar p-1!">
     <template #start class="flex">
       <img src="./assets/pb.webp" class="h-5 mx-2">
-      <div>
-        Q&amp;A
-      </div>
+      <span>Q&A</span>
     </template>
     <template #end>
       <Button icon="pi pi-minus" severity="info" size="small" @click="minimizeApp" text/>
@@ -100,18 +114,23 @@ onMounted(async () => {
         <div class="grid gap-5 grid-rows-[auto_1fr] h-full">
           <Fieldset legend="Zadaj pytanie" class="w-full h-min rounded-xl!">
             <div class="flex gap-5">
-              <TextInput v-model="question" @keydown.enter="getAnswer" placeholder="Twoje pytanie..." class="w-full"/>
+              <IconField class="w-full">
+                <TextInput v-model="question" @keydown.enter="getAnswer" placeholder="Twoje pytanie..." class="w-full"></TextInput>
+                <InputIcon class="pi pi-times cursor-pointer" @click="question = ''; answer = ''"></InputIcon>
+              </IconField>
               <Button icon="pi pi-check" class="px-5!" color="primary" label="Zatwierdź" @click="getAnswer"></Button>
             </div>
           </Fieldset>
           <Fieldset legend="Odpowiedź" class="w-full [&_div]:h-100 rounded-xl!">
             <ScrollPanel style="width: 100%; height: 100%">
-              <p v-if="answer.length > 0" class="whitespace-pre-line mr-5">
-                {{ answer ?? 'Tu pojawi się odpowiedź...' }}
-              </p>
-              <p v-else class="text-center text-gray-600 mt4 h-full italic">
-                Tu pojawi się odpowiedź...
-              </p>
+              <Transition name="fade" mode="out-in">
+                <p v-if="answer.length > 0" :key="answer" class="whitespace-pre-line mr-5">
+                  {{ answer }}
+                </p>
+                <p v-else class="text-center text-gray-600 pt-4 h-full italic">
+                  Tu pojawi się odpowiedź...
+                </p>
+              </Transition>
             </ScrollPanel>
           </Fieldset>
         </div>
@@ -139,7 +158,7 @@ onMounted(async () => {
               </AccordionContent>
             </AccordionPanel>
           </Accordion>
-          <p v-else class="text-center text-gray-600 mt-4 h-full italic">
+          <p v-else class="text-center text-gray-600 pt-4 h-full italic">
             Tu pojawi się historia pytań...
           </p>
         </ScrollPanel>

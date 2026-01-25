@@ -17,11 +17,26 @@ body, #app {
 }
 
 .titlebar {
-  background: #18181B;
+  background-color: rgb(10, 10, 10) !important;
   color: white;
   -webkit-app-region: drag;
 }
 
 .titlebar button {
   -webkit-app-region: no-drag;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.125s;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.fade-enter-to,
+.fade-leave-from {
+  opacity: 1;
 }

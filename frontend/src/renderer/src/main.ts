@@ -6,6 +6,7 @@ import { definePreset } from '@primeuix/themes';
 import PrimeVue from 'primevue/config';
 import App from './App.vue'
 import Aura from '@primeuix/themes/aura';
+import ToastService from 'primevue/toastservice';
 
 const Noir = definePreset(Aura, {
     semantic: {
@@ -59,4 +60,4 @@ createApp(App).use(PrimeVue, {
     theme: {
         preset: Noir
     }
-}).mount('#app');
+}).use(ToastService).mount('#app');
