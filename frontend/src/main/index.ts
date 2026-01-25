@@ -3,14 +3,18 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import fs from 'fs';
+const { remote } = require('electron')
 
 function createWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 900,
-    height: 710,
+    height: 720,
     show: false,
     autoHideMenuBar: true,
+    frame: false,
+    titleBarStyle: 'hidden',
+    resizable: false,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -26,6 +30,14 @@ function createWindow(): void {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
+
+  ipcMain.on('minimize', () => {
+    if (mainWindow) mainWindow.minimize();
+  })
+
+  ipcMain.on('close', () => { 
+    if (mainWindow) mainWindow.close();
+  });
 
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
@@ -68,6 +80,7 @@ ipcMain.handle('load', async () => {
     return [];
   }
 });
+
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
