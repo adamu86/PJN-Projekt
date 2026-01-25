@@ -55,7 +55,7 @@ if __name__ == "__main__":
         q = input("\nZadaj pytanie > ")
         results = engine.query(q, k=5)
 
-        answer, passage = answer_extraction(results, q)
+        answer, sentence, passage = answer_extraction(results, q)
 
         print(f"\nOdpowiedź: {answer}")
         print(f"Kontekst: {passage}")
