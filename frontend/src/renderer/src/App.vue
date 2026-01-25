@@ -66,7 +66,7 @@ onMounted(async () => {
         <div class="grid gap-5 grid-rows-[auto_1fr] h-full">
           <Fieldset legend="Zadaj pytanie" class="w-full h-min rounded-xl!">
             <div class="flex gap-5">
-              <TextInput v-model="question" placeholder="Twoje pytanie..." class="w-full"/>
+              <TextInput v-model="question" @keydown.enter="getAnswer" placeholder="Twoje pytanie..." class="w-full"/>
               <Button color="primary" label="Zatwierdź" @click="getAnswer"></Button>
             </div>
           </Fieldset>
