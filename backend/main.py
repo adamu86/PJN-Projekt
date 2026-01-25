@@ -31,11 +31,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/ask")
-def ask_question(q: str):
-    results = engine.query(q)
+# @app.get("/ask")
+# def ask_question(q: str):
+#     results = engine.query(q)
     
-    return results
+#     return results
 
 # while(1):
 #     q = input("\nZadaj pytanie > ")
@@ -50,3 +50,15 @@ def ask_question(q: str):
 #         print(f"[{score:.2f}] {p}")
 #     print("\n")
 
+if __name__ == "__main__":
+    while True:
+        q = input("\nZadaj pytanie > ")
+        results = engine.query(q, k=5)
+
+        answer, passage = answer_extraction(results, q)
+
+        print(f"\nOdpowiedź: {answer}")
+        print(f"Kontekst: {passage}")
+
+        for p, score in results:
+            print(f"[{score:.2f}] {p}")

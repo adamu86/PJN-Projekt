@@ -1,6 +1,13 @@
 import spacy
+import subprocess
+import sys
 
-nlp = spacy.load("pl_core_news_sm")
+
+try:
+    nlp = spacy.load("pl_core_news_md")
+except OSError:
+    subprocess.check_call([sys.executable, "-m", "spacy", "download", "pl_core_news_md"])
+    nlp = spacy.load("pl_core_news_md")
 
 def preprocess(text):
     doc = nlp(text.lower())
