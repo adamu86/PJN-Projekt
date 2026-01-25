@@ -57,7 +57,7 @@ onMounted(async () => {
 
 <template>
   <Tabs value="0">
-    <TabList class="sticky top-0 z-10 bg-white">
+    <TabList>
       <Tab value="0">Zadaj pytanie</Tab>
       <Tab value="1">Historia pytań</Tab>
     </TabList>
@@ -79,9 +79,9 @@ onMounted(async () => {
           </Fieldset>
         </div>
       </TabPanel>
-      <ScrollPanel style="width: 100%; height: calc(100vh - 6rem)">
-        <TabPanel value="1" class="overflow-y-hidden! mr-5">
-          <Accordion v-if="history.length > 0" value="0">
+      <TabPanel value="1">
+        <ScrollPanel style="width: 100%; height: calc(100vh - 6rem)">
+          <Accordion v-if="history.length > 0" value="0" class="mr-6">
             <AccordionPanel v-for="({ question, answer }, index) in history" :key="index" :value="index">
               <AccordionHeader>
                 <h1>
@@ -103,8 +103,8 @@ onMounted(async () => {
           <p v-else class="text-center text-gray-400 mt-10 h-full italic">
             Tu pojawi się historia pytań...
           </p>
-        </TabPanel>
-      </ScrollPanel>
+        </ScrollPanel>
+      </TabPanel>
     </TabPanels>
   </Tabs>
 </template>
