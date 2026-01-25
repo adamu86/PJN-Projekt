@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import fs from 'fs';
 
 function createWindow(): void {
   // Create the browser window.
@@ -48,6 +49,25 @@ ipcMain.handle('ask', async (event, question: string) => {
     return { error: error.message }
   }
 })
+
+ipcMain.handle('save', async (event, history) => {
+  fs.writeFileSync('data.json', JSON.stringify(history, null, 2), 'utf-8');
+  return 'ok';
+});
+
+ipcMain.handle('load', async () => {
+  try {
+    if (fs.existsSync('data.json')) {
+      const data = fs.readFileSync('data.json', 'utf-8');
+      return JSON.parse(data);
+    } else {
+      return [];
+    }
+  } catch (error) {
+    console.error('Error loading history:', error);
+    return [];
+  }
+});
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
