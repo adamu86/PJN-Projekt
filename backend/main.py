@@ -5,7 +5,7 @@ from answer_extractor import answer_extraction
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-with open("data/regulamin.txt", encoding="utf-8") as f:
+with open("backend/data/regulamin.txt", encoding="utf-8") as f:
     text = f.read()
 
 paragraphs = re.split(r"\n(?=§\s*\d+)", text)

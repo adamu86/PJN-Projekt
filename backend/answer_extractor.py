@@ -16,7 +16,8 @@ QUESTION_TYPES = {
     "number": ["ile", "koszt", "opłata", "kwota", "wysokość", "wynosi"],
     "date": ["kiedy", "termin", "od", "do", "deadline", "data"],
     "place": ["miejsce", "w", "na", "gdzie", "adres", "lokalizacja"],
-    "person_organization": ["kto", "osoba", "organ", "instytucja"]
+    "person_organization": ["kto", "osoba", "organ", "instytucja"],
+    "yes_no": ["czy", "możliwe", "można"]
 }
 
 def question_type(question):
@@ -45,11 +46,53 @@ def extract_number_regex(text):
     match = re.findall(r"(?<!\w)-?\d+(?:[\s.,]?\d+)*(?:[.,]\d+)?(?:%|zł|złotych|złote|PLN)?", text)
 
     if match:
-        return match
-    
+        return [m.strip() for m in match]
     return []
 
+def extract_yes_no_answer(sentence, passage):
+
+    negative_patterns = [r"\bnie\s+jest\s+możliwe", r"\bnie\s+może", r"\bnie\s+wolno", r"\bzakazane", r"\bniemożliwe", r"\bnie\s+można"]
+    positive_patterns = [r"\bjest\s+możliwe", r"\bmoże", r"\bma\s+prawo", r"\buprawni", r"\bmożna", r"\bdozwolone"]
+
+    text = sentence.lower()
+    
+    for pattern in negative_patterns:
+        if re.search(pattern, text):
+            explanation = sentence.split(',')[0] if ',' in sentence else sentence
+            return f"Nie. {explanation}"
+    
+    for pattern in positive_patterns:
+        if re.search(pattern, text):
+            explanation = sentence.split(',')[0] if ',' in sentence else sentence
+            return f"Tak. {explanation}"
+    
+    return None
+
+def extract_best_sentence(passage, question):
+    doc = nlp(passage)
+    question_tokens = set(preprocess_simple(question))
+    
+    best_sent = None
+    best_overlap = 0
+    
+    for sent in doc.sents:
+        sent_tokens = set(preprocess_simple(sent.text))
+        overlap = len(question_tokens & sent_tokens)
+        
+        if overlap > best_overlap:
+            best_overlap = overlap
+            best_sent = sent.text
+    
+    return best_sent if best_sent else list(doc.sents)[0].text
+
+def preprocess_simple(text):
+    doc = nlp(text.lower())
+    return [token.lemma_ for token in doc if not token.is_punct]
+
 def answer_extraction(results, question):
+    if not results:
+        return "Nie znaleziono odpowiedzi", None, None
+    
     qtype = question_type(question)
 
     for passage, score in results:
@@ -58,8 +101,6 @@ def answer_extraction(results, question):
         for sent in doc.sents:
             sent_text = sent.text
             ents = sent.ents
-
-            print(sent)
 
             if qtype == "number":
                 numbers = [ent.text for ent in ents if ent.label_ in ["MONEY", "CARDINAL"]]
@@ -90,5 +131,13 @@ def answer_extraction(results, question):
 
                 if per_org:
                     return per_org, sent_text, passage
+                
+            elif qtype == "yes_no":
+                yn_answer = extract_yes_no_answer(sent_text, passage)
+                if yn_answer:
+                    return yn_answer, sent_text, passage
 
-    return None, None, results[0][0]
+    best_passage = results[0][0]
+    best_sentence = extract_best_sentence(best_passage, question)
+    
+    return best_sentence, best_sentence, best_passage
