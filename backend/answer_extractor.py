@@ -49,6 +49,37 @@ def extract_number_regex(text):
         return [m.strip() for m in match]
     return []
 
+def extract_person_role_regex(text):
+    
+    roles = ["dziekan", "rektor", "prorektor", "prodziekan", "kierownik", 
+             "przewodniczący", "komisja", "senat", "rada", "minister", 
+             "student", "promotor", "opiekun", "wykładowca", "prowadzący"]
+    
+    action_patterns = [
+        r"podejmuje\s+(\w+(?:\s+lub\s+jego\s+zastępca)?)",
+        r"wydaje\s+(\w+)",
+        r"decyduje\s+(\w+)",
+        r"ustala\s+(\w+)",
+        r"zatwierdza\s+(\w+)",
+        r"powołuje\s+(\w+)"
+    ]
+    
+    text_lower = text.lower()
+
+    for pattern in action_patterns:
+        match = re.search(pattern, text_lower)
+        if match:
+            candidate = match.group(1).strip()
+            for role in roles:
+                if role in candidate:
+                    return role.capitalize()
+
+    for role in roles:
+        if role in text_lower:
+            return role.capitalize()
+    
+    return None
+
 def extract_yes_no_answer(sentence, passage):
 
     negative_patterns = [r"\bnie\s+jest\s+możliwe", r"\bnie\s+może", r"\bnie\s+wolno", r"\bzakazane", r"\bniemożliwe", r"\bnie\s+można"]
@@ -67,6 +98,65 @@ def extract_yes_no_answer(sentence, passage):
             return f"Tak. {explanation}"
     
     return None
+
+def select_best_date(dates, sentence, question):
+
+    if len(dates) == 1:
+        return dates[0]
+    
+    start_keywords = ["rozpoczyna", "zaczyna", "start", "od", "początek"]
+    end_keywords = ["kończy", "koniec", "do", "zakończenie"]
+    
+    q_lower = question.lower()
+    s_lower = sentence.lower()
+    
+    asking_about_start = any(word in q_lower for word in start_keywords)
+    asking_about_end = any(word in q_lower for word in end_keywords)
+    
+    if asking_about_end:
+        for keyword in end_keywords:
+
+            pattern = fr"{keyword}\s+(?:się\s+)?(.+?)(?:\.|,|$)"
+            match = re.search(pattern, s_lower)
+            if match:
+                date_context = match.group(1)
+
+                for date in dates:
+                    if date.lower() in date_context:
+                        return date
+    
+    if asking_about_start:
+        for keyword in start_keywords:
+            pattern = fr"{keyword}\s+(?:się\s+)?(.+?)(?:\.|,|a\s)"
+            match = re.search(pattern, s_lower)
+            if match:
+                date_context = match.group(1)
+                for date in dates:
+                    if date.lower() in date_context:
+                        return date
+
+    return dates[0]
+
+def select_best_number(numbers, sentence, question):
+
+    if len(numbers) == 1:
+        return numbers[0]
+    
+    q_lower = question.lower()
+    
+    key_words = ["opłata", "koszt", "kwota", "cena", "wynosi"]
+    
+    for word in key_words:
+        if word in q_lower:
+            pattern = fr"{word}\s+\w*\s+(\d+(?:\s*zł)?)"
+            match = re.search(pattern, sentence.lower())
+            if match:
+                found_num = match.group(1)
+                for num in numbers:
+                    if found_num in num or num in found_num:
+                        return num
+    
+    return numbers[0]
 
 def extract_best_sentence(passage, question):
     doc = nlp(passage)
@@ -102,6 +192,17 @@ def answer_extraction(results, question):
             sent_text = sent.text
             ents = sent.ents
 
+            #print(sent)
+
+            if qtype == "person_organization":
+                role = extract_person_role_regex(sent_text)
+                if role:
+                    return role, sent_text, passage
+                
+                per_org = [ent.text for ent in ents if ent.label_ in ["PER", "ORG"]]
+                if per_org:
+                    return per_org[0], sent_text, passage
+
             if qtype == "number":
                 numbers = [ent.text for ent in ents if ent.label_ in ["MONEY", "CARDINAL"]]
 
@@ -109,7 +210,8 @@ def answer_extraction(results, question):
                     numbers = extract_number_regex(sent_text)
 
                 if numbers:
-                    return numbers, sent_text, passage
+                    best_number = select_best_number(numbers, sent_text, question)
+                    return best_number , sent_text, passage
                 
             elif qtype == "date":
                 dates = [ent.text for ent in ents if ent.label_ in ["DATE", "TIME"]]
@@ -118,19 +220,14 @@ def answer_extraction(results, question):
                     dates = extract_date_regex(sent_text)
 
                 if dates:
-                    return dates, sent_text, passage
+                    best_date = select_best_date(dates, sent_text, question)
+                    return best_date, sent_text, passage
                 
             elif qtype == "place":
                 places = [ent.text for ent in ents if ent.label_ in ["LOC", "GPE", "FACILITY", "ORG"]]
                 
                 if places:
                     return places, sent_text, passage
-            
-            elif qtype == "person_organization":
-                per_org = [ent.text for ent in ents if ent.label_ in ["PER", "ORG"]]
-
-                if per_org:
-                    return per_org, sent_text, passage
                 
             elif qtype == "yes_no":
                 yn_answer = extract_yes_no_answer(sent_text, passage)
