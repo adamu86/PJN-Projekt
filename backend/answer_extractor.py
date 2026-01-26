@@ -16,8 +16,7 @@ QUESTION_TYPES = {
     "number": ["ile", "koszt", "opłata", "kwota", "wysokość", "wynosi"],
     "date": ["kiedy", "termin", "od", "do", "deadline", "data"],
     "place": ["miejsce", "w", "na", "gdzie", "adres", "lokalizacja"],
-    "person_organization": ["kto", "osoba", "organ", "instytucja"],
-    "yes_no": ["czy", "możliwe", "można"]
+    "person_organization": ["kto", "osoba", "organ", "instytucja"]
 }
 
 def question_type(question):
@@ -77,25 +76,6 @@ def extract_person_role_regex(text):
     for role in roles:
         if role in text_lower:
             return role.capitalize()
-    
-    return None
-
-def extract_yes_no_answer(sentence, passage):
-
-    negative_patterns = [r"\bnie\s+jest\s+możliwe", r"\bnie\s+może", r"\bnie\s+wolno", r"\bzakazane", r"\bniemożliwe", r"\bnie\s+można"]
-    positive_patterns = [r"\bjest\s+możliwe", r"\bmoże", r"\bma\s+prawo", r"\buprawni", r"\bmożna", r"\bdozwolone"]
-
-    text = sentence.lower()
-    
-    for pattern in negative_patterns:
-        if re.search(pattern, text):
-            explanation = sentence.split(',')[0] if ',' in sentence else sentence
-            return f"Nie. {explanation}"
-    
-    for pattern in positive_patterns:
-        if re.search(pattern, text):
-            explanation = sentence.split(',')[0] if ',' in sentence else sentence
-            return f"Tak. {explanation}"
     
     return None
 
@@ -228,12 +208,7 @@ def answer_extraction(results, question):
                 
                 if places:
                     return places, sent_text, passage
-                
-            elif qtype == "yes_no":
-                yn_answer = extract_yes_no_answer(sent_text, passage)
-                if yn_answer:
-                    return yn_answer, sent_text, passage
-
+            
     best_passage = results[0][0]
     best_sentence = extract_best_sentence(best_passage, question)
     

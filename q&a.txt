@@ -1,0 +1,9 @@
+--------------DATY
+- do kiedy jest podawany harmonogram zajęć
+odp: 31 maja
+
+- kiedy zaczyna się rok akademicki
+odp: 1 października
+
+- kiedy kończy się rok akademiczki
+odp: 30 września
