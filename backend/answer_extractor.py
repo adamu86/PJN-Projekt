@@ -12,15 +12,26 @@ except OSError:
     subprocess.check_call([sys.executable, "-m", "spacy", "download", model])
     nlp = spacy.load(model)
 
+PRIORITY_KEYWORDS = {
+    "person_organization": ["kto"],
+    "number": ["ile"],
+    "date": ["kiedy"],
+    "place": ["gdzie"]
+}
+
 QUESTION_TYPES = {
-    "number": ["ile", "koszt", "opłata", "kwota", "wysokość", "wynosi"],
-    "date": ["kiedy", "termin", "od", "do", "deadline", "data"],
-    "place": ["miejsce", "w", "na", "gdzie", "adres", "lokalizacja"],
-    "person_organization": ["kto", "osoba", "organ", "instytucja"]
+    "number": ["koszt", "opłata", "kwota", "wysokość", "wynosi"],
+    "date": ["termin", "deadline", "data"],
+    "place": ["miejsce", "adres", "lokalizacja"],
+    "person_organization": ["osoba", "organ", "instytucja"]
 }
 
 def question_type(question):
     doc = nlp(question.lower())
+
+    for qtype, keywords in PRIORITY_KEYWORDS.items():
+        if any(token.lemma_ in keywords or token.text in keywords for token in doc):
+            return qtype
 
     for qtype, keywords in QUESTION_TYPES.items():
         if any(token.lemma_.lower() in keywords or token.text.lower() in keywords for token in doc):
@@ -178,12 +189,12 @@ def answer_extraction(results, question):
                 role = extract_person_role_regex(sent_text)
                 if role:
                     return role, sent_text, passage
-                
+
                 per_org = [ent.text for ent in ents if ent.label_ in ["PER", "ORG"]]
                 if per_org:
                     return per_org[0], sent_text, passage
 
-            if qtype == "number":
+            elif qtype == "number":
                 numbers = [ent.text for ent in ents if ent.label_ in ["MONEY", "CARDINAL"]]
 
                 if not numbers:
