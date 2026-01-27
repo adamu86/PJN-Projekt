@@ -82,9 +82,25 @@ def extract_number_regex(text):
 
     return numbers if numbers else []
 
+def extract_place_regex(text):
+    academic_places = [
+        r"(dziekanat|sekretariat|biuro|rektorat|wydział|uczelnia|kampus)",
+        r"w\s+(dziekanacie|sekretariacie|biurze|rektoracie|wydziale|systemie)",
+        r"na\s+(wydziale|uczelni|kampusie)",
+        r"do\s+(dziekanatu|sekretariatu|biura|rektoratu|wydziału)",
+    ]
+
+    for pattern in academic_places:
+        match = re.search(pattern, text.lower())
+        if match:
+            start, end = match.span()
+            return text[start:end].strip()
+
+    return None
+
 def extract_person_role_regex(text):
     
-    roles = ["dziekan", "rektor", "prorektor", "prodziekan", "kierownik", 
+    roles = ["nauczyciele", "dziekan", "rektor", "prorektor", "prodziekan", "kierownik", 
              "przewodniczący", "komisja", "senat", "rada", "minister", 
              "student", "promotor", "opiekun", "wykładowca", "prowadzący"]
     
@@ -272,10 +288,14 @@ def answer_extraction(results, question):
                     return best_date, sent_text, passage
                 
             elif qtype == "place":
+                place_match = extract_place_regex(sent_text)
+                if place_match:
+                    return place_match, sent_text, passage
+
                 places = [ent.text for ent in ents if ent.label_ in ["LOC", "GPE", "FACILITY", "ORG"]]
-                
+
                 if places:
-                    return places, sent_text, passage
+                    return places[0], sent_text, passage
             
     best_passage = results[0][0]
     best_sentence = extract_best_sentence(best_passage, question)
