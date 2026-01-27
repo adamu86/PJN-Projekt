@@ -53,7 +53,9 @@ def extract_date_regex(text):
     return []
 
 def extract_number_regex(text):
-    match = re.findall(r"(?<!\w)-?\d+(?:[\s.,]?\d+)*(?:[.,]\d+)?(?:%|zł|złotych|złote|PLN)?", text)
+    text_cleaned = re.sub(r"(^|\s)§?\s*\d+\.\s", r"\1", text)
+
+    match = re.findall(r"(?<!\w)-?\d+(?:[\s.,]?\d+)*(?:[.,]\d+)?(?:\s*(?:%|zł|złotych|złote|PLN|dni|dni|dzień|miesięcy|miesiące|rok|lat|lata))?", text_cleaned)
 
     if match:
         return [m.strip() for m in match]
@@ -132,21 +134,33 @@ def select_best_number(numbers, sentence, question):
 
     if len(numbers) == 1:
         return numbers[0]
-    
+
     q_lower = question.lower()
-    
-    key_words = ["opłata", "koszt", "kwota", "cena", "wynosi"]
-    
-    for word in key_words:
+    s_lower = sentence.lower()
+
+    money_keywords = ["opłata", "koszt", "kwota", "cena", "wynosi"]
+    time_keywords = ["dni", "dzień", "termin", "miesiąc", "miesięcy", "lat", "rok", "tygodni"]
+
+    if any(word in q_lower for word in time_keywords):
+        for time_word in time_keywords:
+            pattern = fr"(\d+)\s*{time_word}|{time_word}\s*(\d+)"
+            match = re.search(pattern, s_lower)
+            if match:
+                found_num = match.group(1) or match.group(2)
+                for num in numbers:
+                    if found_num in num or num.startswith(found_num):
+                        return num
+
+    for word in money_keywords:
         if word in q_lower:
             pattern = fr"{word}\s+\w*\s+(\d+(?:\s*zł)?)"
-            match = re.search(pattern, sentence.lower())
+            match = re.search(pattern, s_lower)
             if match:
                 found_num = match.group(1)
                 for num in numbers:
                     if found_num in num or num in found_num:
                         return num
-    
+
     return numbers[0]
 
 def extract_best_sentence(passage, question):
