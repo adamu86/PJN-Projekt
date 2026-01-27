@@ -55,11 +55,32 @@ def extract_date_regex(text):
 def extract_number_regex(text):
     text_cleaned = re.sub(r"(^|\s)§?\s*\d+\.\s", r"\1", text)
 
-    match = re.findall(r"(?<!\w)-?\d+(?:[\s.,]?\d+)*(?:[.,]\d+)?(?:\s*(?:%|zł|złotych|złote|PLN|dni|dni|dzień|miesięcy|miesiące|rok|lat|lata))?", text_cleaned)
+    word_to_num = {
+        "jeden": "1", "jednego": "1", "jedna": "1", "jednej": "1",
+        "dwa": "2", "dwóch": "2", "dwie": "2",
+        "trzy": "3", "trzech": "3",
+        "cztery": "4", "czterech": "4",
+        "pięć": "5", "pięciu": "5",
+        "sześć": "6", "sześciu": "6",
+        "siedem": "7", "siedmiu": "7",
+        "osiem": "8", "ośmiu": "8",
+        "dziewięć": "9", "dziewięciu": "9",
+        "dziesięć": "10", "dziesięciu": "10"
+    }
+
+    numbers = []
+
+    text_lower = text_cleaned.lower()
+    for word, num in word_to_num.items():
+        if re.search(rf"\b{word}\b", text_lower):
+            numbers.append(num)
+
+    match = re.findall(r"(?<!\w)-?\d+(?:[\s.,]?\d+)*(?:[.,]\d+)?(?:\s*(?:%|zł|złotych|złote|PLN|dni|dzień|miesięcy|miesiące|rok|lat|lata))?", text_cleaned)
 
     if match:
-        return [m.strip() for m in match]
-    return []
+        numbers.extend([m.strip() for m in match])
+
+    return numbers if numbers else []
 
 def extract_person_role_regex(text):
     
@@ -129,6 +150,26 @@ def select_best_date(dates, sentence, question):
                         return date
 
     return dates[0]
+
+def is_relevant_number(number, sentence, question):
+    s_lower = sentence.lower()
+    q_lower = question.lower()
+
+    number_str = str(number).replace(" ", "")
+
+    if number_str.isdigit():
+        num_val = int(number_str.split('.')[0])
+
+        if num_val >= 1900 and num_val <= 2100:
+            if "rok" in s_lower or "r." in sentence or "/" in sentence:
+                if "ile" in q_lower and ("rok" in q_lower or "lat" in q_lower):
+                    return True
+                return False
+
+        if num_val > 100 and ("uchwała" in s_lower or "nr" in s_lower.split(number_str)[0][-10:]):
+            return False
+
+    return True
 
 def select_best_number(numbers, sentence, question):
 
@@ -214,8 +255,10 @@ def answer_extraction(results, question):
                 if not numbers:
                     numbers = extract_number_regex(sent_text)
 
-                if numbers:
-                    best_number = select_best_number(numbers, sent_text, question)
+                relevant_numbers = [n for n in numbers if is_relevant_number(n, sent_text, question)]
+
+                if relevant_numbers:
+                    best_number = select_best_number(relevant_numbers, sent_text, question)
                     return best_number , sent_text, passage
                 
             elif qtype == "date":
