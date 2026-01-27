@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import Button from 'primevue/button';
 import TextInput from 'primevue/inputtext';
-import { onMounted, ref } from 'vue';
 import Fieldset from 'primevue/fieldset';
 import Tabs from 'primevue/tabs';
 import TabList from 'primevue/tablist';
@@ -15,70 +14,56 @@ import AccordionContent from 'primevue/accordioncontent';
 import ScrollPanel from 'primevue/scrollpanel';
 import Toolbar from 'primevue/toolbar';
 import Toast from 'primevue/toast';
-import { useToast } from 'primevue/usetoast';
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
+import Tag from 'primevue/tag';
+import { onMounted, reactive, ref, watch } from 'vue';
+import { useToast } from 'primevue/usetoast';
+import { Answer, QuestionAnswer, defaultAnswer } from './answer';
+import { closeApp, minimizeApp, showError, showSuccess } from './utils';
 
 const toast = useToast();
 
 const question = ref<string>('');
-const answer = ref<string>('');
-const history = ref<{question: string, answer: string}[]>([]);
+let answer = reactive<Answer>({ ...defaultAnswer });
+const history = ref<QuestionAnswer[]>([]);
 
-const save = async () => {
-  window.electron.ipcRenderer.invoke(
-    'save', 
-    history.value.map(item => ({
+const getAnswer = async () => {
+  if (question.value.length > 0) {
+    const res: Answer = await window.electron.ipcRenderer.invoke('ask', question.value);
+    Object.assign(answer, res);
+    history.value.unshift({ question: question.value, answer: { ...answer } })
+    showSuccess(toast);
+  } else {
+    showError(toast);
+  }
+}
+
+const saveAnswers = async () => {
+  await window.electron.ipcRenderer.invoke(
+    'save',
+    history.value.map((item: QuestionAnswer) => ({
       question: item.question,
-      answer: item.answer
+      answer: { ...item.answer }
     }))
   );
 }
 
-const getAnswer = async () => {
-  if (question.value.length > 0) {
-    const res = await window.electron.ipcRenderer.invoke('ask', question.value);
-
-    const objects = res.map(([text, score]) => ({ text, score }));
-
-    answer.value = objects.map((item) => item.text).join("\n\n");
-
-    history.value.unshift({ question: question.value, answer: answer.value });
-
-    save();
-
-    showSuccess();
-  } else {
-    showError();
-  }
+const clearAnswer = () => {
+  question.value = '';
+  Object.assign(answer, { ...defaultAnswer });
 }
 
 const deleteAnswer = (index: number) => {
   history.value.splice(index, 1);
-
-  save();
 }
 
-const closeApp = () => {
-  window.electron.ipcRenderer.send('close')
-}
-
-const minimizeApp = () => {
-  window.electron.ipcRenderer.send('minimize')
-}
-
-const showSuccess = () => {
-    toast.add({ severity: 'success', summary: 'Sukces', life: 1500 });
-};
-
-const showError = () => {
-    toast.add({ severity: 'error', summary: 'Wpisz pytanie', life: 1500 });
-};
+watch(history, () => {
+  saveAnswers();
+}, { deep: true })
 
 onMounted(async () => {
-  const res = await window.electron.ipcRenderer.invoke('load');
-
-  history.value = res;
+  history.value = await window.electron.ipcRenderer.invoke('load');;
 });
 </script>
 
@@ -86,8 +71,8 @@ onMounted(async () => {
   <Toast position="top-center" class="w-54! **:my-auto!"></Toast>
   <Toolbar class="titlebar p-1!">
     <template #start class="flex">
-      <img src="./assets/pb.webp" class="h-5 mx-2">
-      <span>Q&A</span>
+      <!-- <img src="./assets/pb.webp" class="h-5 ml-2"> -->
+      <span class="ml-2">Q&A</span>
     </template>
     <template #end>
       <Button icon="pi pi-minus" severity="info" size="small" @click="minimizeApp" text/>
@@ -98,15 +83,11 @@ onMounted(async () => {
     <TabList>
       <Tab value="0" class="flex gap-2!">
         <div class="pi pi-question my-auto"></div>
-        <span>
-          Zadaj pytanie
-        </span>
+        <span>Zadaj pytanie</span>
       </Tab>
       <Tab value="1" class="flex gap-2!">
         <div class="pi pi-history my-auto"></div>
-        <span>
-          Historia pytań
-        </span>
+        <span>Historia pytań</span>
       </Tab>
     </TabList>
     <TabPanels>
@@ -116,17 +97,20 @@ onMounted(async () => {
             <div class="flex gap-5">
               <IconField class="w-full">
                 <TextInput v-model="question" @keydown.enter="getAnswer" placeholder="Twoje pytanie..." class="w-full"></TextInput>
-                <InputIcon class="pi pi-times cursor-pointer" @click="question = ''; answer = ''"></InputIcon>
+                <InputIcon class="pi pi-times cursor-pointer" @click="clearAnswer"></InputIcon>
               </IconField>
               <Button icon="pi pi-check" class="px-5!" color="primary" label="Zatwierdź" @click="getAnswer"></Button>
             </div>
           </Fieldset>
-          <Fieldset legend="Odpowiedź" class="w-full [&_div]:h-100 rounded-xl!">
+          <Fieldset legend="Wynik" class="w-full [&_div]:h-100 rounded-xl!">
             <ScrollPanel style="width: 100%; height: 100%">
               <Transition name="fade" mode="out-in">
-                <p v-if="answer.length > 0" :key="answer" class="whitespace-pre-line mr-5">
-                  {{ answer }}
-                </p>
+                <article v-if="answer.answer.length > 0" :key="answer.answer" class="whitespace-pre-line mr-4 text-justify grid gap-2">
+                  <Tag class="p-2.5! w-min bg-black!" style="border: 1px solid; border-color: rgb(255,255,255,.25);">Odpowiedź</Tag>
+                  <span class="mb">{{ answer.answer }}</span>
+                  <Tag class="p-2.5! w-min bg-black! mt-4" style="border: 1px solid; border-color: rgb(255,255,255,.25);">Kontekst</Tag>
+                  <span>{{ answer.passage }}</span>
+                </article>
                 <p v-else class="text-center text-gray-600 pt-4 h-full italic">
                   Tu pojawi się odpowiedź...
                 </p>
@@ -137,20 +121,19 @@ onMounted(async () => {
       </TabPanel>
       <TabPanel value="1">
         <ScrollPanel style="width: 100%; height: calc(100vh - 6rem)">
-          <Accordion v-if="history.length > 0" value="0" class="mr-6">
+          <Accordion v-if="history.length > 0" value="0" class="mr-6 border border-white/15 rounded-lg">
             <AccordionPanel v-for="({ question, answer }, index) in history" :key="index" :value="index">
               <AccordionHeader>
-                <h1>
-                  <span>
-                    {{ question }}
-                  </span>
-                </h1>
+                <h1>{{ question }}</h1>
               </AccordionHeader>
               <AccordionContent>
-                <ScrollPanel style="width: 100%; height: 350px">
-                  <div class="m-0 whitespace-pre-line flex flex-col gap-4.5 mr-6">
-                    <p class="bg-white/5 p-5 rounded-lg">
-                      {{ answer }}
+                <ScrollPanel style="width: 100%; max-height: 500px">
+                  <div class="m-0 whitespace-pre-line grid gap-4 mr-6">
+                    <p class="bg-white/2.5 border-white/15 border p-4 rounded-lg text-justify whitespace-pre-line grid gap-2">
+                      <Tag class="p-2.5! w-min bg-black!" style="border: 1px solid; border-color: rgb(255,255,255,.25);">Odpowiedź</Tag>
+                      <span class="mb">{{ answer.answer }}</span>
+                      <Tag class="p-2.5! w-min bg-black! mt-4" style="border: 1px solid; border-color: rgb(255,255,255,.25);">Kontekst</Tag>
+                      <span>{{ answer.passage }}</span>
                     </p>
                     <Button icon="pi pi-trash" class="ml-auto" severity="danger" label="Usuń z historii" @click="deleteAnswer(index)"></Button>
                   </div>

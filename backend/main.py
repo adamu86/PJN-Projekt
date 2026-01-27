@@ -5,7 +5,7 @@ from answer_extractor import answer_extraction
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-with open("backend/data/regulamin.txt", encoding="utf-8") as f:
+with open("data/regulamin.txt", encoding="utf-8") as f:
     text = f.read()
 
 paragraphs = re.split(r"\n(?=§\s*\d+)", text)
@@ -31,11 +31,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# @app.get("/ask")
-# def ask_question(q: str):
-#     results = engine.query(q)
+@app.get("/ask")
+def ask_question(q: str):
+    results = engine.query(q)
+
+    answer, sentence, passage = answer_extraction(results, q)
     
-#     return results
+    return {
+        "answer": answer,
+        "sentence": sentence,
+        "passage": passage
+    }
 
 # while(1):
 #     q = input("\nZadaj pytanie > ")
@@ -50,15 +56,15 @@ app.add_middleware(
 #         print(f"[{score:.2f}] {p}")
 #     print("\n")
 
-if __name__ == "__main__":
-    while True:
-        q = input("\nZadaj pytanie > ")
-        results = engine.query(q, k=5)
+# if __name__ == "__main__":
+#     while True:
+#         q = input("\nZadaj pytanie > ")
+#         results = engine.query(q, k=5)
 
-        answer, sentence, passage = answer_extraction(results, q)
+#         answer, sentence, passage = answer_extraction(results, q)
 
-        print(f"\nOdpowiedź: {answer}")
-        print(f"Kontekst: {passage}")
+#         print(f"\nOdpowiedź: {answer}")
+#         print(f"Kontekst: {passage}")
 
-        for p, score in results:
-            print(f"[{score:.2f}] {p}")
+#         for p, score in results:
+#             print(f"[{score:.2f}] {p}")

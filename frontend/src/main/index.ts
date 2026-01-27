@@ -3,13 +3,16 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import fs from 'fs';
-const { remote } = require('electron')
+import { Answer, QuestionAnswer } from './answer';
 
 function createWindow(): void {
+  const appWidth = 900;
+  const appHeight = 720;
+
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 720,
+    width: appWidth,
+    height: appHeight,
     show: false,
     autoHideMenuBar: true,
     frame: false,
@@ -21,6 +24,8 @@ function createWindow(): void {
       sandbox: false
     }
   })
+
+  mainWindow.center();
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
@@ -54,7 +59,7 @@ ipcMain.handle('ask', async (event, question: string) => {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
-    const data = await response.json()
+    const data: Answer = await response.json()
     return data
   } catch (error) {
     console.error('Error fetching prediction:', error)
@@ -62,7 +67,7 @@ ipcMain.handle('ask', async (event, question: string) => {
   }
 })
 
-ipcMain.handle('save', async (event, history) => {
+ipcMain.handle('save', async (event, history: QuestionAnswer[]) => {
   fs.writeFileSync('data.json', JSON.stringify(history, null, 2), 'utf-8');
   return 'ok';
 });
