@@ -65,21 +65,21 @@ maja roku kalendarzowego, w którym rozpoczyna się dany rok akademicki.
 3. Na studiach o profilu praktycznym możliwe jest ustalenie, na wniosek wydziału,
 innego harmonogramu.
 § 5
-Studia prowadzone są według programów studiów ustalonych dla poszczególnych
+1. Studia prowadzone są według programów studiów ustalonych dla poszczególnych
 kierunków, poziomów i profili w trybie określonym w Ustawie i statucie Uczelni.
-Program studiów określa się zgodnie z obowiązującymi przepisami ujętymi w
+2. Program studiów określa się zgodnie z obowiązującymi przepisami ujętymi w
 rozporządzeniu w sprawie studiów ministra właściwego do spraw szkolnictwa
 wyższego.
-Program studiów podaje się do wiadomości na stronie internetowej najpóźniej na
+3. Program studiów podaje się do wiadomości na stronie internetowej najpóźniej na
 cztery miesiące przed rozpoczęciem zajęć dydaktycznych na danym cyklu
 kształcenia. Rozkłady zajęć podawane są do wiadomości studentów nie później niż
 na 7 dni przed rozpoczęciem zajęć dydaktycznych.
-Koordynatorzy przedmiotów mają obowiązek zamieszczenia w USOSweb, najpóźniej
+4. Koordynatorzy przedmiotów mają obowiązek zamieszczenia w USOSweb, najpóźniej
 w pierwszych dwóch tygodniach semestru, kart przedmiotów z opisanymi efektami
 uczenia się i sposobami ich weryfikacji, zasad oceniania ustalonych dla wszystkich
 form zajęć, jednolitych dla wszystkich grup zajęciowych danej formy zajęć i
 określonych dla wszystkich ocen w obowiązującej skali.
-Osoby prowadzące zajęcia dydaktyczne, zwane dalej nauczycielami akademickimi,
+5. Osoby prowadzące zajęcia dydaktyczne, zwane dalej nauczycielami akademickimi,
 przedstawiają studentom:
 szczegółowy program danej formy przedmiotu, zawierający zakładane efekty uczenia
 się, treści przedmiotu i wykaz zalecanej literatury oraz omawiają sposób oceniania i
@@ -87,20 +87,20 @@ warunki zaliczenia zajęć, a także zasady usprawiedliwiania nieobecności
 na obowiązkowych zajęciach – na pierwszych zajęciach w semestrze;
 terminy i godziny konsultacji – najpóźniej w drugim tygodniu zajęć dydaktycznych na
 stronie internetowej wydziału.
-Zajęcia dydaktyczne prowadzone są przez nauczycieli akademickich, posiadających
+6. Zajęcia dydaktyczne prowadzone są przez nauczycieli akademickich, posiadających
 dorobek dydaktyczny, naukowy lub artystyczny i doświadczenie pozwalające na
 prawidłową realizację zajęć. Zajęcia w formie wykładów prowadzą nauczyciele z
 tytułem profesora lub stopniem doktora habilitowanego. Rektor może upoważnić do
 prowadzenia wykładów nauczycieli akademickich posiadających stopień doktora.
-W przypadku przedmiotu zakładającego nabycie przez studentów specjalistycznej
+7. W przypadku przedmiotu zakładającego nabycie przez studentów specjalistycznej
 wiedzy praktycznej, w szczególności na studiach o profilu praktycznym z udziałem
 podmiotów gospodarczych, rektor może upoważnić do prowadzenia wykładów osoby
 zatrudnione w otoczeniu społeczno-gospodarczym, posiadające tytuł zawodowy
 magistra i znaczne doświadczenie zawodowe nabyte poza uczelnią w obszarach
 działalności zawodowej/gospodarczej, właściwych dla kierunku.
-Zajęcia mogą być prowadzone z wykorzystaniem metod i technik kształcenia na
+8. Zajęcia mogą być prowadzone z wykorzystaniem metod i technik kształcenia na
 odległość, zgodnie z przepisami powszechnie obowiązującymi.
-Dziekanat prowadzi ewidencję studentów, przechowuje ich akta osobowe i załatwia
+9. Dziekanat prowadzi ewidencję studentów, przechowuje ich akta osobowe i załatwia
 wszelkie sprawy związane z przebiegiem studiów oraz świadczeniami dla studentów.
 Dziekanat jest dostępny dla studentów w każdy dzień roboczy, a dla studentów
 studiów niestacjonarnych także w sobotę (w terminach zjazdów).
