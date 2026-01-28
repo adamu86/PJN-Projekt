@@ -62,7 +62,7 @@ ipcMain.handle('ask', async (event, question: string) => {
     const data: Answer = await response.json()
     return data
   } catch (error) {
-    console.error('Error fetching prediction:', error)
+    console.error('Error fetching query:', error)
     return { error: error.message }
   }
 })
