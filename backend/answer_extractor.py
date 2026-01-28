@@ -2,6 +2,7 @@ import spacy
 import subprocess
 import sys
 import re
+from preprocess import preprocess
 
 
 model = "pl_core_news_lg"
@@ -13,7 +14,7 @@ except OSError:
     nlp = spacy.load(model)
 
 PRIORITY_KEYWORDS = {
-    "person_organization": ["kto"],
+    "person_organization": ["kto", "kogo"],
     "number": ["ile"],
     "date": ["kiedy"],
     "place": ["gdzie"]
@@ -101,7 +102,7 @@ def extract_place_regex(text):
 def extract_person_role_regex(text):
     
     roles = ["nauczyciele", "dziekan", "rektor", "prorektor", "prodziekan", "kierownik", 
-             "przewodniczący", "komisja", "senat", "rada", "minister", 
+             "przewodniczący", "komisja", "senat", "rada", "minister", "uczelnia",
              "student", "promotor", "opiekun", "wykładowca", "prowadzący"]
     
     action_patterns = [
@@ -221,25 +222,22 @@ def select_best_number(numbers, sentence, question):
     return numbers[0]
 
 def extract_best_sentence(passage, question):
+
     doc = nlp(passage)
-    question_tokens = set(preprocess_simple(question))
-    
+    question_tokens = set(preprocess(question, remove_stopwords=False))
+
     best_sent = None
     best_overlap = 0
-    
+
     for sent in doc.sents:
-        sent_tokens = set(preprocess_simple(sent.text))
+        sent_tokens = set(preprocess(sent.text, remove_stopwords=False))
         overlap = len(question_tokens & sent_tokens)
-        
+
         if overlap > best_overlap:
             best_overlap = overlap
             best_sent = sent.text
-    
-    return best_sent if best_sent else list(doc.sents)[0].text
 
-def preprocess_simple(text):
-    doc = nlp(text.lower())
-    return [token.lemma_ for token in doc if not token.is_punct]
+    return best_sent if best_sent else list(doc.sents)[0].text
 
 def answer_extraction(results, question):
     if not results:
