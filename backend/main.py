@@ -1,3 +1,13 @@
+"""Główny moduł aplikacji QA dla polskiego regulaminu uczelni.
+
+Ładuje tekst regulaminu, dzieli go na pasaże, buduje indeks wyszukiwania
+i udostępnia:
+- API FastAPI (GET /ask) dla frontendu
+- tryb ewaluacji (--eval) z metrykami MRR@k i Recall@k
+- tryb listowania pasażów (--dump)
+- interaktywny tryb konsolowy
+"""
+
 import re
 import json
 import sys
@@ -8,7 +18,7 @@ from answer_extractor import answer_extraction
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-with open("data/regulamin.txt", encoding="utf-8") as f:
+with open("backend/data/regulamin.txt", encoding="utf-8") as f:
     text = f.read()
 
 paragraphs = re.split(r"\n(?=§\s*\d+)", text)
@@ -28,6 +38,15 @@ passage_ids = list(range(len(passages)))
 engine = Engine(passages, passage_ids)
 
 def evaluate(questions_file, k=5):
+    """Ewaluacja silnika wyszukiwania na zbiorze pytań z ustalonymi pasażami.
+
+    Oblicza MRR@k i Recall@k dla każdego pytania i drukuje podsumowanie wyników.
+
+    Args:
+        questions_file: Scieżka do JSON z pytaniami (lista obiektów
+            z "question" i "relevant_ids").
+        k: Liczba wyników do rozważenia przy obliczaniu metryk.
+    """
     with open(questions_file, encoding="utf-8") as f:
         questions = json.load(f)
 
@@ -67,6 +86,7 @@ def evaluate(questions_file, k=5):
     print(f"  Recall@{k}: {avg_recall:.4f}")
 
 def dump_passages():
+    """Drukuje wszystkie pasaże z ich identyfikatorami do konsoli."""
     for pid, p in zip(passage_ids, passages):
         print(f"[{pid}] {p[:120]}")
 
@@ -103,6 +123,14 @@ app.add_middleware(
 
 @app.get("/ask")
 def ask_question(q: str):
+    """Endpoint API do zadania pytania i uzyskania odpowiedzi.
+
+    Args:
+        q: Tekst pytania (query parameter).
+
+    Returns:
+        JSON z polami: answer, sentence, passage.
+    """
     results = engine.query(q, k=10)
 
     passage_results = [(p, score) for _, p, score in results]

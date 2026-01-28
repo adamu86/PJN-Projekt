@@ -1,3 +1,10 @@
+"""Moduł ekstrakcji odpowiedzi z pasażów tekstowych.
+
+Klasyfikuje pytania pod względem typu (osoba/organizacja, liczba, data, miejsce),
+a następnie ekstrakcja odpowiedzi korzysta z NER spaCy i reguł regex dopasowanych
+do regulaminu Politechniki Białostockiej.
+"""
+
 import spacy
 import subprocess
 import sys
@@ -28,6 +35,17 @@ QUESTION_TYPES = {
 }
 
 def question_type(question):
+    """Klasyfikuje pytanie pod względem oczekiwanego typu odpowiedzi.
+
+    Kolejność prioritetu: PRIORITY_KEYWORDS (kto/ile/kiedy/gdzie),
+    następnie QUESTION_TYPES (słowa kluczowe kontekstowe).
+
+    Args:
+        question: Tekst pytania.
+
+    Returns:
+        Jeden z typów: "person_organization", "number", "date", "place", "text".
+    """
     doc = nlp(question.lower())
 
     for qtype, keywords in PRIORITY_KEYWORDS.items():
@@ -41,6 +59,16 @@ def question_type(question):
     return "text"
 
 def extract_date_regex(text):
+    """Ekstrakcja dat z tekstu za pomocą regex.
+
+    Szuka dat w formacie "DD miesiąc [YYYY r.]" lub "DD.MM.YYYY".
+
+    Args:
+        text: Tekst, z którego ekstrakcja dat.
+
+    Returns:
+        Lista znalezionych dat jako stringi. Pusta lista jeśli brak.
+    """
     months = r"(?:stycznia|lutego|marca|kwietnia|maja|czerwca|lipca|sierpnia|września|października|listopada|grudnia)"
     
     match_text = re.findall(fr"\b\d{{1,2}}\s+{months}(?:\s+\d{{4}}\s*r?\.)?\b", text, re.IGNORECASE)
@@ -54,6 +82,17 @@ def extract_date_regex(text):
     return []
 
 def extract_number_regex(text):
+    """Ekstrakcja liczb z tekstu za pomocą regex.
+
+    Usuwa prefixy paragrafu żeby nie mylić ich z liczbami,
+    następnie szuka cyfr i słowa oznaczające liczby (jeden–dziesięć).
+
+    Args:
+        text: Tekst, z którego ekstrakcja liczb.
+
+    Returns:
+        Lista znalezionych liczb jako stringi.
+    """
     text_cleaned = re.sub(r"(^|\s)§?\s*\d+\.\s", r"\1", text)
 
     word_to_num = {
@@ -84,6 +123,17 @@ def extract_number_regex(text):
     return numbers if numbers else []
 
 def extract_place_regex(text):
+    """Ekstrakcja nazwy miejsca z tekstu za pomocą regex.
+
+    Szuka nazw akademickich lokalizacji (dziekanat, sekretariat, wydział itp.)
+    w różnych deklinacjach (w, na, do).
+
+    Args:
+        text: Tekst, z którego ekstrakcja miejsca.
+
+    Returns:
+        String z nazwą miejsca lub None jeśli nie znaleziono.
+    """
     academic_places = [
         r"(dziekanat|sekretariat|biuro|rektorat|wydział|uczelnia|kampus)",
         r"w\s+(dziekanacie|sekretariacie|biurze|rektoracie|wydziale|systemie)",
@@ -100,8 +150,18 @@ def extract_place_regex(text):
     return None
 
 def extract_person_role_regex(text):
-    
-    roles = ["nauczyciele", "dziekanat", "dziekan", "rektor", "prorektor", "prodziekan", "kierownik", 
+    """Ekstrakcja roli osoby lub organizacji z tekstu za pomocą regex.
+
+    Najpierw szuka ról powiązanych z czynności (podejmuje, wydaje, decyduje),
+    następnie szuka samych nazw ról w tekście.
+
+    Args:
+        text: Tekst, z którego ekstrakcja roli.
+
+    Returns:
+        String z nazwą roli (kapitalizowaną) lub None jeśli nie znaleziono.
+    """
+    roles = ["nauczyciele", "dziekanat", "dziekan", "rektor", "prorektor", "prodziekan", "kierownik",
              "przewodniczący", "komisja", "senat", "rada", "minister", "uczelnia", "koordynatorzy",
              "student", "promotor", "opiekun", "wykładowca", "prowadzący"]
     
@@ -131,7 +191,19 @@ def extract_person_role_regex(text):
     return None
 
 def select_best_date(dates, sentence, question):
+    """Wybiera najlepszą datę z listy kandydatów.
 
+    Analizuje kontekst zdania i pytania (początek/koniec, od/do)
+    żeby wybrać datę najlepszą do kontekstu zapytania.
+
+    Args:
+        dates: Lista dat-kandydatów.
+        sentence: Zdanie, z którego pochodzą daty.
+        question: Tekst pytania.
+
+    Returns:
+        Najlepsza data jako string.
+    """
     if len(dates) == 1:
         return dates[0]
     
@@ -169,6 +241,19 @@ def select_best_date(dates, sentence, question):
     return dates[0]
 
 def is_relevant_number(number, sentence, question):
+    """Sprawdza czy liczba jest ważna w pytaniu.
+
+    Filtruje fałszywe pozytywne: lata (1900-2100) jeśli pytanie nie jest o czas,
+    numery uchwał (>100 przy kontekście "uchwała"/"nr").
+
+    Args:
+        number: Ekstrahuowana liczba jako string.
+        sentence: Zdanie źródłowe.
+        question: Tekst pytania.
+
+    Returns:
+        True jeśli liczba jest ważna, False w przeciwnym razie.
+    """
     s_lower = sentence.lower()
     q_lower = question.lower()
 
@@ -189,7 +274,19 @@ def is_relevant_number(number, sentence, question):
     return True
 
 def select_best_number(numbers, sentence, question):
+    """Wybiera najlepszą liczbę z listy kandydatów.
 
+    Analizuje kontekst pytania (pieniężny/czasowy) żeby wybrać liczbę
+    powiązaną z właściwą jednostką lub kontekstem.
+
+    Args:
+        numbers: Lista liczb-kandydatów jako stringi.
+        sentence: Zdanie źródłowe.
+        question: Tekst pytania.
+
+    Returns:
+        Najlepsza liczba jako string.
+    """
     if len(numbers) == 1:
         return numbers[0]
 
@@ -222,7 +319,17 @@ def select_best_number(numbers, sentence, question):
     return numbers[0]
 
 def extract_best_sentence(passage, question):
+    """Wybiera zdanie z pasażu najbardziej powiązane z pytaniem.
 
+    Oblicza overlap tokenów między pytaniem a każdym zdaniem.
+
+    Args:
+        passage: Tekst pasażu.
+        question: Tekst pytania.
+
+    Returns:
+        Najlepsze zdanie jako string.
+    """
     doc = nlp(passage)
     question_tokens = set(preprocess(question, remove_stopwords=False))
 
@@ -240,6 +347,22 @@ def extract_best_sentence(passage, question):
     return best_sent if best_sent else list(doc.sents)[0].text
 
 def answer_extraction(results, question):
+    """Główna funkcja ekstrakcji odpowiedzi z rankingowych wyników.
+
+    Klasyfikuje pytanie, iteruje po pasażach i zdaniach, szuka odpowiedzi
+    najpierw przez NER spaCy, a następnie przez reguły regex.
+    Fallback: najlepsze zdanie na podstawie overlapa tokenów.
+
+    Args:
+        results: Lista krotek (passage_text, score) od silnika wyszukiwania.
+        question: Tekst pytania.
+
+    Returns:
+        Krotka (answer, sentence, passage) gdzie:
+        - answer: ekstrahowana odpowiedź
+        - sentence: zdanie źródłowe
+        - passage: pasaż źródłowy
+    """
     if not results:
         return "Nie znaleziono odpowiedzi", None, None
     
@@ -251,8 +374,6 @@ def answer_extraction(results, question):
         for sent in doc.sents:
             sent_text = sent.text
             ents = sent.ents
-
-            #print(sent)
 
             if qtype == "person_organization":
                 per_org = [ent.text for ent in ents if ent.label_ in ["PER", "ORG"]]

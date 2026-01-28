@@ -1,3 +1,9 @@
+"""Moduł preprocessingu tekstowego dla języka polskiego.
+
+Ładuje model spaCy `pl_core_news_lg`
+i udostępnia funkcję lematyzacji tekstów polskich.
+"""
+
 import spacy
 import subprocess
 import sys
@@ -11,7 +17,15 @@ except OSError:
     nlp = spacy.load(model)
 
 def preprocess(text, remove_stopwords=True):
+    """Tokenizacja i lematyzacja tekstu polskiego.
 
+    Args:
+        text: Tekst do przetwarzenia.
+        remove_stopwords: Jeśli True, usuwa stop words z wyniku.
+
+    Returns:
+        Lista lematów (tokenów w formie podstawowej).
+    """
     doc = nlp(text.lower())
 
     if remove_stopwords:
