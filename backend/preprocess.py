@@ -2,7 +2,6 @@ import spacy
 import subprocess
 import sys
 
-
 model = "pl_core_news_lg"
 
 try:
@@ -12,18 +11,20 @@ except OSError:
     nlp = spacy.load(model)
 
 def preprocess(text, remove_stopwords=True):
-    
+
     doc = nlp(text.lower())
 
     if remove_stopwords:
         tokens = [
             token.lemma_
+            #token.text
             for token in doc
             if not token.is_stop and not token.is_punct
         ]
     else:
         tokens = [
             token.lemma_
+            #token.text
             for token in doc
             if not token.is_punct
         ]

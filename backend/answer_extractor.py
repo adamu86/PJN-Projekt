@@ -31,7 +31,7 @@ def question_type(question):
     doc = nlp(question.lower())
 
     for qtype, keywords in PRIORITY_KEYWORDS.items():
-        if any(token.lemma_ in keywords or token.text in keywords for token in doc):
+        if any(token.lemma_.lower() in keywords or token.text.lower() in keywords for token in doc):
             return qtype
 
     for qtype, keywords in QUESTION_TYPES.items():
@@ -87,7 +87,7 @@ def extract_place_regex(text):
     academic_places = [
         r"(dziekanat|sekretariat|biuro|rektorat|wydział|uczelnia|kampus)",
         r"w\s+(dziekanacie|sekretariacie|biurze|rektoracie|wydziale|systemie)",
-        r"na\s+(wydziale|uczelni|kampusie)",
+        r"na\s+(wydziale|uczelni|kampusie|stronie)",
         r"do\s+(dziekanatu|sekretariatu|biura|rektoratu|wydziału)",
     ]
 
@@ -101,8 +101,8 @@ def extract_place_regex(text):
 
 def extract_person_role_regex(text):
     
-    roles = ["nauczyciele", "dziekan", "rektor", "prorektor", "prodziekan", "kierownik", 
-             "przewodniczący", "komisja", "senat", "rada", "minister", "uczelnia",
+    roles = ["nauczyciele", "dziekanat", "dziekan", "rektor", "prorektor", "prodziekan", "kierownik", 
+             "przewodniczący", "komisja", "senat", "rada", "minister", "uczelnia", "koordynatorzy",
              "student", "promotor", "opiekun", "wykładowca", "prowadzący"]
     
     action_patterns = [
@@ -178,7 +178,7 @@ def is_relevant_number(number, sentence, question):
         num_val = int(number_str.split('.')[0])
 
         if num_val >= 1900 and num_val <= 2100:
-            if "rok" in s_lower or "r." in sentence or "/" in sentence:
+            if "rok" in s_lower or "r." in s_lower or "/" in s_lower:
                 if "ile" in q_lower and ("rok" in q_lower or "lat" in q_lower):
                     return True
                 return False
@@ -255,13 +255,13 @@ def answer_extraction(results, question):
             #print(sent)
 
             if qtype == "person_organization":
-                role = extract_person_role_regex(sent_text)
-                if role:
-                    return role, sent_text, passage
-
                 per_org = [ent.text for ent in ents if ent.label_ in ["PER", "ORG"]]
                 if per_org:
                     return per_org[0], sent_text, passage
+
+                role = extract_person_role_regex(sent_text)
+                if role:
+                    return role, sent_text, passage
 
             elif qtype == "number":
                 numbers = [ent.text for ent in ents if ent.label_ in ["MONEY", "CARDINAL"]]
@@ -273,8 +273,8 @@ def answer_extraction(results, question):
 
                 if relevant_numbers:
                     best_number = select_best_number(relevant_numbers, sent_text, question)
-                    return best_number , sent_text, passage
-                
+                    return best_number, sent_text, passage
+
             elif qtype == "date":
                 dates = [ent.text for ent in ents if ent.label_ in ["DATE", "TIME"]]
 
@@ -286,16 +286,15 @@ def answer_extraction(results, question):
                     return best_date, sent_text, passage
                 
             elif qtype == "place":
+                places = [ent.text for ent in ents if ent.label_ in ["LOC", "GPE", "FACILITY"]]
+                if places:
+                    return places[0], sent_text, passage
+
                 place_match = extract_place_regex(sent_text)
                 if place_match:
                     return place_match, sent_text, passage
 
-                places = [ent.text for ent in ents if ent.label_ in ["LOC", "GPE", "FACILITY", "ORG"]]
-
-                if places:
-                    return places[0], sent_text, passage
-            
     best_passage = results[0][0]
     best_sentence = extract_best_sentence(best_passage, question)
-    
+
     return best_sentence, best_sentence, best_passage

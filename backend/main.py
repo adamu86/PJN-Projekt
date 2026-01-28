@@ -1,9 +1,10 @@
 import re
-from importlib.resources import path
-from bm25_engine import BM25Engine
+import json
+import sys
+# from tfidf_engine import TFIDFEngine as Engine
+from bm25_engine import BM25Engine as Engine
+# from spacy_engine import SpacyEngine as Engine
 from answer_extractor import answer_extraction
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
 with open("backend/data/regulamin.txt", encoding="utf-8") as f:
     text = f.read()
@@ -21,8 +22,73 @@ for para in paragraphs:
             cleaned = re.sub(r"^\d+\.\s*", "", part)
             passages.append(" ".join(cleaned.split()))
 
-engine = BM25Engine(passages)
+passage_ids = list(range(len(passages)))
+engine = Engine(passages, passage_ids)
 
+def evaluate(questions_file, k=5):
+    with open(questions_file, encoding="utf-8") as f:
+        questions = json.load(f)
+
+    rr_scores = []
+    recall_scores = []
+
+    for item in questions:
+        q = item["question"]
+        relevant_ids = set(item["relevant_ids"])
+
+        results = engine.query(q, k=k)
+        retrieved_ids = [pid for pid, _, _ in results]
+
+        rr = 0.0
+        for rank, pid in enumerate(retrieved_ids, 1):
+            if pid in relevant_ids:
+                rr = 1.0 / rank
+                break
+        rr_scores.append(rr)
+
+        found = len(relevant_ids & set(retrieved_ids))
+        recall = found / len(relevant_ids) if relevant_ids else 1.0
+        recall_scores.append(recall)
+
+        status = "+" if rr > 0 else "-"
+        print(f"  [{status}] RR={rr:.2f} | {q[:70]}")
+        print(f"      Znalezione: {retrieved_ids}")
+        print(f"      Oczekiwane: {sorted(relevant_ids)}")
+
+    mrr = sum(rr_scores) / len(rr_scores)
+    avg_recall = sum(recall_scores) / len(recall_scores)
+
+    print(f"\n{'---------------------------'}")
+    print(f"  Ewaluacja (k={k}, n={len(questions)})")
+    print(f"{'---------------------------'}")
+    print(f"  MRR@{k}:    {mrr:.4f}")
+    print(f"  Recall@{k}: {avg_recall:.4f}")
+
+def dump_passages():
+    for pid, p in zip(passage_ids, passages):
+        print(f"[{pid}] {p[:120]}")
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        cmd = sys.argv[1]
+        if cmd == "--eval":
+            k = int(sys.argv[3]) if len(sys.argv) > 3 else 5
+            evaluate(sys.argv[2], k=k)
+        elif cmd == "--dump":
+            dump_passages()
+    else:
+        while True:
+            q = input("\nZadaj pytanie > ")
+            results = engine.query(q, k=10)
+
+            passage_results = [(p, score) for _, p, score in results]
+            answer, sentence, passage = answer_extraction(passage_results, q)
+
+            print(f"\nOdpowiedź: {answer}")
+            print(f"Kontekst: {passage}")
+
+            for pid, p, score in results:
+                print(f"[{score:.2f}] (ID:{pid}) {p}")
 
 #app = FastAPI()
 
@@ -57,16 +123,3 @@ engine = BM25Engine(passages)
     #for p, score in results:
         #print(f"[{score:.2f}] {p}")
     #print("\n")
-
-if __name__ == "__main__":
-    while True:
-        q = input("\nZadaj pytanie > ")
-        results = engine.query(q, k=5)
-
-        answer, sentence, passage = answer_extraction(results, q)
-
-        print(f"\nOdpowiedź: {answer}")
-        print(f"Kontekst: {passage}")
-
-        for p, score in results:
-            print(f"[{score:.2f}] {p}")
